@@ -1,0 +1,50 @@
+bash
+python nombre_del_script.py
+
+
+import requests
+
+# URL base de la API SWAPI
+URL_BASE = "https://swapi.dev/api/"
+
+def obtener_peliculas_con_planetas_aridos():
+    """Función para contar en cuántas películas aparecen planetas con clima árido."""
+    planetas = requests.get(f"{URL_BASE}planets/").json()
+    peliculas_con_planetas_aridos = set()
+
+    while planetas['next']:
+        for planeta in planetas['results']:
+            if 'arid' in planeta['climate']:
+                for url_pelicula in planeta['films']:
+                    peliculas_con_planetas_aridos.add(url_pelicula)
+        planetas = requests.get(planetas['next']).json()
+
+    return len(peliculas_con_planetas_aridos)
+
+def contar_wookies():
+    """Función para contar cuántos Wookies aparecen en toda la saga."""
+    url_especie_wookie = f"{URL_BASE}species/?search=wookiee"
+    especie_wookie = requests.get(url_especie_wookie).json()['results'][0]
+    wookies = requests.get(especie_wookie['people'][0]).json()
+    return len(wookies)
+
+def obtener_aeronave_mas_pequena_en_primera_pelicula():
+    """Función para obtener el nombre de la aeronave más pequeña en la primera película."""
+    primera_pelicula = requests.get(f"{URL_BASE}films/1/").json()
+    aeronave_mas_pequena = None
+    nombre_aeronave_mas_pequena = None
+
+    for url_aeronave in primera_pelicula['vehicles']:
+        aeronave = requests.get(url_aeronave).json()
+        if aeronave_mas_pequena is None or float(aeronave['length']) < aeronave_mas_pequena:
+            aeronave_mas_pequena = float(aeronave['length'])
+            nombre_aeronave_mas_pequena = aeronave['name']
+
+    return nombre_aeronave_mas_pequena
+
+# Responder a las preguntas
+print(f"a) ¿En cuántas películas aparecen planetas cuyo clima sea árido? {obtener_peliculas_con_planetas_aridos()}")
+
+print(f"b) ¿Cuántos Wookies aparecen en toda la saga? {contar_wookies()}")
+
+print(f"c) ¿Cuál es el nombre de la aeronave más pequeña en la primera película? {obtener_aeronave_mas_pequena_en_primera_pelicula()}")
