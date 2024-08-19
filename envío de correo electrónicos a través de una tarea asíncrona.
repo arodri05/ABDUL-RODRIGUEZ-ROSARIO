@@ -1,11 +1,25 @@
-####Primero, instalamos las dependencias necesarias
-bash
-pip install celery redis Flask-Mail
-
-####Crear un archivo celery.py en mi proyecto:
-
+from flask import Flask, request
+from flask_mail import Mail, Message
 from celery import Celery
 
+# Configuración de la aplicación Flask
+app = Flask(__name__)
+
+# Configuración de Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.your-email-provider.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'your-email@example.com'
+app.config['MAIL_PASSWORD'] = 'your-email-password'
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+
+mail = Mail(app)
+
+# Configuración de Celery
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+
+# Inicializar Celery
 def make_celery(app):
     celery = Celery(
         app.import_name,
@@ -15,3 +29,28 @@ def make_celery(app):
     celery.conf.update(app.config)
     return celery
 
+celery = make_celery(app)
+
+# Tarea asíncrona para enviar correos electrónicos
+@celery.task
+def send_async_email(subject, sender, recipients, body):
+    with app.app_context():
+        msg = Message(subject, sender=sender, recipients=recipients)
+        msg.body = body
+        mail.send(msg)
+
+# Ruta para enviar correos electrónicos
+@app.route('/send-email/', methods=['POST'])
+def send_email():
+    subject = request.form.get("subject", "Asunto del correo")
+    sender = app.config['MAIL_USERNAME']
+    recipients = [request.form.get("recipient", "recipient@example.com")]
+    body = request.form.get("body", "Este es el cuerpo del correo electrónico.")
+
+    # Llamada asíncrona para enviar el correo
+    send_async_email.delay(subject, sender, recipients, body)
+    return "Correo electrónico en proceso de envío."
+
+# Archivo de entrada para Gunicorn
+if __name__ == "__main__":
+    app.run()
