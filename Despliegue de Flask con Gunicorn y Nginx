@@ -1,0 +1,54 @@
+####Actualizamos el servidor e instalamos herramientas básicas:
+bash
+
+sudo apt update
+sudo apt upgrade
+sudo apt install python3-pip python3-dev nginx
+
+#####Clonamos la aplicación y entramos en su directorio:
+bash 
+
+cd /path/to/your/app
+
+####Configurar el Entorno Virtual y Gunicorn
+
+python3 -m venv venv
+source venv/bin/activate
+
+#### Instalar dependencias incluyendo Gunicorn:
+bash
+
+pip install -r requirements.txt  # Asegúrate de que Gunicorn esté en tu archivo requirements.txt
+
+####Crear un servicio systemd para Gunicorn
+bash
+
+Crear el archivo de servicio:
+bash
+
+sudo nano /etc/systemd/system/myapp.service
+
+####Agregar la configuración para Gunicorn:
+
+[Unit]
+Description=Gunicorn instance to serve my Flask application
+After=network.target
+
+[Service]
+User=youruser
+Group=www-data
+WorkingDirectory=/path/to/your/app
+Environment="PATH=/path/to/your/app/venv/bin"
+ExecStart=/path/to/your/app/venv/bin/gunicorn --workers 3 --bind unix:/path/to/your/app/myapp.sock wsgi:app
+
+[Install]
+WantedBy=multi-user.target
+
+####Habilitar la configuración de Nginx y reiniciar el servicio:
+bash
+
+sudo ln -s /etc/nginx/sites-available/myapp /etc/nginx/sites-enabled
+sudo rm /etc/nginx/sites-enabled/default
+sudo systemctl restart nginx
+
+
