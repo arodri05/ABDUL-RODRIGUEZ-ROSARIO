@@ -1,0 +1,17 @@
+####Primero, instalamos las dependencias necesarias
+bash
+pip install celery redis Flask-Mail
+
+####Crear un archivo celery.py en mi proyecto:
+
+from celery import Celery
+
+def make_celery(app):
+    celery = Celery(
+        app.import_name,
+        backend=app.config['CELERY_RESULT_BACKEND'],
+        broker=app.config['CELERY_BROKER_URL']
+    )
+    celery.conf.update(app.config)
+    return celery
+
