@@ -1,0 +1,57 @@
+bash
+pip install requests
+
+from flask import Flask, render_template, request, redirect, url_for
+import requests
+
+app = Flask(__name__)
+
+# Configuración de la URL base de la API REST
+API_BASE_URL = "https://api-ejemplo.com"
+
+@app.route('/')
+def index():
+    # Llamar a la API REST para obtener la lista de recetas
+    response = requests.get(f"{API_BASE_URL}/recetas/")
+    recetas = response.json()
+    return render_template('index.html', recetas=recetas)
+
+@app.route('/agregar', methods=['GET', 'POST'])
+def agregar_receta():
+    if request.method == 'POST':
+        nueva_receta = {
+            "nombre": request.form['nombre'],
+            "ingredientes": request.form['ingredientes'],
+            "procedimientos": request.form['procedimientos']
+        }
+        # Enviar los datos de la nueva receta a la API REST
+        requests.post(f"{API_BASE_URL}/recetas/", json=nueva_receta)
+        return redirect(url_for('index'))
+    
+    return render_template('agregar.html')
+
+@app.route('/actualizar/<id>', methods=['GET', 'POST'])
+def actualizar_receta(id):
+    if request.method == 'POST':
+        receta_actualizada = {
+            "nombre": request.form['nombre'],
+            "ingredientes": request.form['ingredientes'],
+            "procedimientos": request.form['procedimientos']
+        }
+        # Enviar los datos de la receta actualizada a la API REST
+        requests.put(f"{API_BASE_URL}/recetas/{id}/", json=receta_actualizada)
+        return redirect(url_for('index'))
+    
+    # Obtener los datos de la receta específica desde la API REST
+    response = requests.get(f"{API_BASE_URL}/recetas/{id}/")
+    receta = response.json()
+    return render_template('actualizar.html', receta=receta)
+
+@app.route('/eliminar/<id>')
+def eliminar_receta(id):
+    # Llamar a la API REST para eliminar la receta
+    requests.delete(f"{API_BASE_URL}/recetas/{id}/")
+    return redirect(url_for('index'))
+
+if __name__ == "__main__":
+    app.run()
